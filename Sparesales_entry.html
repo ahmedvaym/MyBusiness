@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Entry Form</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #e8e8ee;
+            text-align: center;
+    }
+    h1 {
+            color: #333;
+            
+        }
+    .container {
+      display: flex;
+      flex-direction: column;
+      margin: 0 auto;
+      max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+     
+    }
+    input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    .form-group input,
+    .form-group select,
+    .form-group button {
+      padding: 10px;
+      width: 100%;
+      font-size: 14px;
+    }
+    .stock-summary {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      display: none;
+    }
+    .stock-summary img {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+    }
+    .item-image {
+      display: block;
+      margin-top: 10px;
+      width: 150px;
+      height: auto;
+    }
+    img {
+            display: block;
+            margin: 10px auto;
+            max-width: 150px;
+        }
+        
+    .sales-table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+    }
+    .sales-table th, .sales-table td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    .delete-button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+    }
+    .delete-button:hover {
+      background-color: darkred;
+    }
+    .totals-row td {
+      font-weight: bold;
+    }
+    button {
+            background-color:rgb(80, 8, 8);
+            color: rgb(255, 251, 251);
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #313233;
+        }
+        .nav-button {
+            margin-top: 20px;
+            background-color: #28a745;
+        }
+        .nav-button:hover {
+            background-color: #218838;
+        }
+  </style>
+</head>
+<body>
+  <h1>AZ Motor Spare Sales Entry</h1>
+  <div class="container">
+    
+    
+    <div id="errorMessage" class="error"></div>
+    <form id="salesForm" onsubmit="return saveSale(event)">
+      <label for="date">Date</label>
+      <input type="date" id="date" required />
+
+      <label for="items">Select Item</label>
+      <select id="items" onchange="updatePriceAndStock()" required>
+        <option value="">-- Select Item --</option>
+        <!-- Dynamically populated -->
+      </select>
+
+      <label for="currentStock">Current Stock</label>
+      <input type="number" id="currentStock" readonly />
+
+      <label for="price">Price</label>
+      <input type="number" id="price" placeholder="Enter Price" required />
+
+      <label for="qty">Qty</label>
+      <input type="number" id="qty" min="1" oninput="calculateTotal()" required />
+
+      <div class="total-value">Total: <span id="totalValue">0</span></div>
+
+      <label for="customerName">Customer Name</label>
+      <input type="text" id="customerName" required />
+
+      <label for="contact">Contact</label>
+      <input type="tel" id="contact" required />
+
+      <button type="submit">Save Sale</button>
+    </form>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-51lpbUdQGsWR1fMTPy9qAs-67X_UR60",
+      authDomain: "sales-b3b4f.firebaseapp.com",
+      databaseURL: "https://sales-b3b4f-default-rtdb.firebaseio.com",
+      projectId: "sales-b3b4f",
+      storageBucket: "sales-b3b4f.firebasestorage.app",
+      messagingSenderId: "983695219492",
+      appId: "1:983695219492:web:4d44d39b2fbc915abdf1b1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Load items into dropdown
+    function loadItems() {
+      const itemsDropdown = document.getElementById('items');
+      db.ref('stock').once('value', (snapshot) => {
+        const stock = snapshot.val();
+        if (stock) {
+          Object.keys(stock).forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            itemsDropdown.appendChild(option);
+          });
+        }
+      });
+    }
+
+    // Update price and stock based on selected item
+    function updatePriceAndStock() {
+      const selectedItem = document.getElementById('items').value;
+      const currentStockField = document.getElementById('currentStock');
+      const priceField = document.getElementById('price');
+      const qtyField = document.getElementById('qty');
+      const totalValueField = document.getElementById('totalValue');
+
+      if (selectedItem) {
+        db.ref(`stock/${selectedItem}`).once('value', (snapshot) => {
+          const stockData = snapshot.val();
+          if (stockData) {
+            currentStockField.value = stockData.quantity;
+            priceField.value = stockData.price; // You can still pre-fill this field, but it's now editable
+            qtyField.value = '';
+            totalValueField.textContent = '0';
+          }
+        });
+      } else {
+        currentStockField.value = '';
+        priceField.value = '';
+        qtyField.value = '';
+        totalValueField.textContent = '0';
+      }
+    }
+
+    // Calculate total value
+    function calculateTotal() {
+      const price = parseFloat(document.getElementById('price').value) || 0;
+      const qty = parseInt(document.getElementById('qty').value) || 0;
+      const totalValueField = document.getElementById('totalValue');
+      totalValueField.textContent = (price * qty).toFixed(2);
+    }
+
+    // Save sale and update stock
+// Save sale and update stock
+function saveSale(event) {
+  event.preventDefault();
+  const selectedItem = document.getElementById('items').value;
+  const qty = parseInt(document.getElementById('qty').value);
+  const currentStock = parseInt(document.getElementById('currentStock').value);
+
+  if (!selectedItem) {
+    showError('Please select an item.');
+    return false;
+  }
+
+  if (qty > currentStock) {
+    showError('Insufficient stock for the selected item.');
+    return false;
+  }
+
+  const saleData = {
+    date: document.getElementById('date').value,
+    item: selectedItem,
+    qty: qty,
+    price: parseFloat(document.getElementById('price').value),
+    totalValue: parseFloat(document.getElementById('totalValue').textContent),
+    customerName: document.getElementById('customerName').value,
+    contact: document.getElementById('contact').value
+  };
+
+  // Save sale to database
+  db.ref('sales').push(saleData).then(() => {
+    // Update stock in database (Fix: use 'quantity' instead of 'qty')
+    db.ref(`stock/${selectedItem}/quantity`).set(currentStock - qty).then(() => {
+      alert('Sale saved successfully.');
+      document.getElementById('salesForm').reset();
+      document.getElementById('totalValue').textContent = '0';
+      updatePriceAndStock(); // Refresh stock display
+    });
+  }).catch(error => {
+    showError('Error saving sale: ' + error.message);
+  });
+
+  return false;
+}
+
+
+    // Show error message
+    function showError(message) {
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = message;
+      setTimeout(() => {
+        errorMessage.textContent = '';
+      }, 5000);
+    }
+
+    // Load items on page load
+    window.onload = loadItems;
+  </script>
+</body>
+</html>

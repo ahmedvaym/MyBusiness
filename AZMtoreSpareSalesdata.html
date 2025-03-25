@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AZ Motor Spare Sales Entry</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      background-color: #434643;
+      color: white;
+      padding: 10px 0;
+      margin: 0;
+    }
+    .container {
+      padding: 20px;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    .filter-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin: 10px;
+    }
+    label {
+      font-weight: bold;
+    }
+    .table-wrapper {
+  max-height: 400px; /* Adjust as needed */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  position: relative;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead, tfoot {
+  position: sticky;
+  background-color: #f4f4f4; /* Ensure visibility */
+  z-index: 1000;
+}
+
+thead {
+  top: 0;
+}
+
+tfoot {
+  bottom: 0;
+  background-color: #f9f9f9;
+  font-weight: bold;
+}
+  
+table th, table td {
+  border: 1px solid #ddd;
+  text-align: center;
+  padding: 8px;
+}
+    button {
+      padding: 10px 15px;
+      background-color: #a84747;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4a4e4a;
+    }
+    @media (max-width: 768px) {
+      .filter-section {
+        flex-direction: column;
+      }
+      .form-group {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AZ Motor Spare Sales Entry</h1>
+  <div class="container">
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="form-group">
+        <label for="filterItem">Filter by Item</label>
+        <select id="filterItem" onchange="filterSales()">
+          <option value="">All Items</option>
+          <option value="Brake Pad">Brake Pad</option>
+          <option value="Oil Filter">Oil Filter</option>
+          <option value="Spark Plug">Spark Plug</option>
+          <option value="Battery">Battery</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filterStartDate">Filter by Start Date</label>
+        <input type="date" id="filterStartDate" onchange="filterSales()">
+      </div>
+      <div class="form-group">
+        <label for="filterEndDate">Filter by End Date</label>
+        <input type="date" id="filterEndDate" onchange="filterSales()">
+      </div>
+      <div class="form-group">
+        <button onclick="exportToPDF()">Export to PDF</button>
+      </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="table-wrapper">
+      <table id="salesTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>Customer Name</th>
+            <th>Contact</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="salesListBody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Grand Total:</td>
+            <td id="totalQty">0</td>
+            <td></td>
+            <td id="grandTotal">0.00</td>
+            <td colspan="3"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
+
+  <script>
+    // Firebase Initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-51lpbUdQGsWR1fMTPy9qAs-67X_UR60",
+      authDomain: "sales-b3b4f.firebaseapp.com",
+      databaseURL: "https://sales-b3b4f-default-rtdb.firebaseio.com",
+      projectId: "sales-b3b4f",
+      storageBucket: "sales-b3b4f.firebasestorage.app",
+      messagingSenderId: "983695219492",
+      appId: "1:983695219492:web:4d44d39b2fbc915abdf1b1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Display saved sales data
+    function displaySalesList() {
+  const salesListBody = document.getElementById("salesListBody");
+  const totalQty = document.getElementById("totalQty");
+  const grandTotal = document.getElementById("grandTotal");
+  const filterItem = document.getElementById("filterItem");
+
+  salesListBody.innerHTML = "";
+  filterItem.innerHTML = "<option value=''>All Items</option>"; // Reset filter dropdown
+
+  let uniqueItems = new Set(); // Store unique item names
+  let totalQtyValue = 0;
+  let grandTotalValue = 0;
+
+  db.ref('sales').once('value', (snapshot) => {
+    const sales = snapshot.val();
+    if (!sales) {
+      salesListBody.innerHTML = "<tr><td colspan='8' style='text-align:center;'>No sales found.</td></tr>";
+    } else {
+      Object.keys(sales).forEach(key => {
+        const entry = sales[key];
+        uniqueItems.add(entry.item); // Add item name to the set
+
+        const row = `
+          <tr data-id="${key}" data-date="${entry.date}" data-item="${entry.item}" data-qty="${entry.qty}" data-total="${entry.totalValue}">
+            <td>${entry.date}</td>
+            <td>${entry.item}</td>
+            <td>${entry.qty}</td>
+            <td>${entry.price}</td>
+            <td>${entry.totalValue}</td>
+            <td>${entry.customerName}</td>
+            <td>${entry.contact}</td>
+            <td><button onclick="deleteEntry('${key}')">Delete</button></td>
+          </tr>
+        `;
+
+        salesListBody.innerHTML += row;
+        totalQtyValue += parseInt(entry.qty);
+        grandTotalValue += parseFloat(entry.totalValue);
+      });
+
+      totalQty.textContent = totalQtyValue;
+      grandTotal.textContent = grandTotalValue.toFixed(2);
+
+      // Populate the filter dropdown with unique items
+      uniqueItems.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.toLowerCase();
+        option.textContent = item;
+        filterItem.appendChild(option);
+      });
+    }
+  });
+}
+
+
+    // Filter sales by item and date
+    function filterSales() {
+      const filterItem = document.getElementById("filterItem").value.toLowerCase();
+      const filterStartDate = document.getElementById("filterStartDate").value;
+      const filterEndDate = document.getElementById("filterEndDate").value;
+
+      const rows = document.querySelectorAll("#salesListBody tr");
+      let filteredQty = 0;
+      let filteredTotal = 0;
+
+      rows.forEach(row => {
+        const item = row.getAttribute("data-item").toLowerCase();
+        const date = row.getAttribute("data-date");
+        const qty = parseInt(row.getAttribute("data-qty"));
+        const total = parseFloat(row.getAttribute("data-total"));
+
+        let isVisible = true;
+
+        if (filterItem && item !== filterItem) {
+          isVisible = false;
+        }
+
+        if (filterStartDate && date < filterStartDate) {
+          isVisible = false;
+        }
+
+        if (filterEndDate && date > filterEndDate) {
+          isVisible = false;
+        }
+
+        if (isVisible) {
+          filteredQty += qty;
+          filteredTotal += total;
+        }
+
+        row.style.display = isVisible ? "" : "none";
+      });
+
+      document.getElementById("totalQty").textContent = filteredQty;
+      document.getElementById("grandTotal").textContent = filteredTotal.toFixed(2);
+    }
+
+    // Export to PDF
+    function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const salesRows = [];
+      const rows = document.querySelectorAll("#salesListBody tr");
+      rows.forEach(row => {
+        if (row.style.display !== "none") {
+          const cells = row.querySelectorAll("td");
+          const rowData = Array.from(cells).map(cell => cell.innerText);
+          salesRows.push(rowData);
+        }
+      });
+
+      const footerRow = [
+        "Grand Total:",
+        "",
+        document.getElementById("totalQty").innerText,
+        "",
+        document.getElementById("grandTotal").innerText,
+        "",
+        ""
+      ];
+      salesRows.push(footerRow);
+
+      doc.text("AZ Motor Spare Sales Report", 14, 10);
+      doc.autoTable({
+        head: [["Date", "Item", "Qty", "Price", "Total", "Customer Name", "Contact"]],
+        body: salesRows
+      });
+
+      doc.save("sales_report.pdf");
+    }
+
+    // Delete entry
+    function deleteEntry(key) {
+      const password = prompt("Enter password to delete (123):");
+      if (password === "123") {
+        db.ref(`sales/${key}`).remove()
+          .then(() => {
+            alert("Entry deleted successfully!");
+            displaySalesList();
+          })
+          .catch((error) => {
+            alert("Error deleting entry: " + error.message);
+          });
+      } else {
+        alert("Incorrect password!");
+      }
+    }
+
+    // Initialize
+    displaySalesList();
+  </script>
+</body>
+</html>

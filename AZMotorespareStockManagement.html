@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Summary</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      background-color: darkred;
+      color: white;
+      padding: 10px 0;
+      margin: 0;
+    }
+    .container {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    .filter {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    label, input, select, button {
+      font-size: 16px;
+      margin: 0 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    table th {
+      background-color: #f2f2f2;
+    }
+    .total-value {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: right;
+      margin-top: 20px;
+    }
+    .add-stock, .update-stock {
+      display: none; /* Initially hidden */
+      margin-top: 30px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .add-stock h2, .update-stock h2 {
+      margin: 0 0 15px;
+      font-size: 20px;
+    }
+    .add-stock label, .update-stock label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .add-stock input, .update-stock input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .add-stock button, .update-stock button {
+      background-color: darkred;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .add-stock button:hover, .update-stock button:hover {
+      background-color: #202220;
+    }
+    .delete-button {
+      background-color: darkred;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .delete-button:hover {
+      background-color: #202220;
+    }
+    /* Mobile responsive adjustments */
+    @media screen and (max-width: 600px) {
+      .filter {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .add-stock input, .add-stock button, .update-stock input, .update-stock button {
+        width: 100%;
+      }
+      table th, table td {
+        padding: 8px;
+        font-size: 14px;
+      }
+      .total-value {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Stock Summary</h1>
+  <div class="container">
+    <div class="filter">
+      <label for="itemFilter">Filter Item:</label>
+      <select id="itemFilter" onchange="filterItems()">
+        <option value="">-- Show All --</option>
+        <!-- Dynamically populated -->
+      </select>
+      <button onclick="toggleAddStockForm()">Add New Stock Item</button>
+      <button onclick="toggleUpdateStockForm()">Update Stock</button>
+      <button onclick="toggleUpdateStockNameForm()">Update Stock Name</button>
+    </div>
+
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Current Stock</th>
+          <th>Price</th>
+          <th>Total Value</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="stockDetails"></tbody>
+    </table>
+
+    <div class="total-value" id="totalStockValue"></div>
+
+    <!-- Add Stock Item Section -->
+    <div class="add-stock" id="addStockForm">
+      <h2>Add New Stock Item</h2>
+      <label for="newItemName">Item Name:</label>
+      <input type="text" id="newItemName" placeholder="Enter item name" />
+      <label for="newItemStock">Stock Quantity:</label>
+      <input type="number" id="newItemStock" placeholder="Enter stock quantity" />
+      <label for="newItemPrice">Price:</label>
+      <input type="number" id="newItemPrice" placeholder="Enter price" step="0.01" />
+      <button onclick="addStock()">Add Item</button>
+    </div>
+
+    <!-- Update Stock Section -->
+    <div class="update-stock" id="updateStockForm">
+      <h2>Update Stock</h2>
+      <label for="updateItemName">Item Name:</label>
+      <input type="text" id="updateItemName" placeholder="Enter item name to update" />
+      <label for="updateItemStock">New Stock Quantity:</label>
+      <input type="number" id="updateItemStock" placeholder="Enter new stock quantity" />
+      <label for="updateItemPrice">New Price:</label>
+      <input type="number" id="updateItemPrice" placeholder="Enter new price" step="0.01" />
+      <button onclick="updateStockItem()">Update Item</button>
+    </div>
+
+    <!-- Update Stock Name Section -->
+    <div class="update-stock" id="updateStockNameForm">
+      <h2>Update Stock Name</h2>
+      <label for="oldItemName">Current Item Name:</label>
+      <input type="text" id="oldItemName" placeholder="Enter current item name" />
+      <label for="newItemNameForUpdate">New Item Name:</label>
+      <input type="text" id="newItemNameForUpdate" placeholder="Enter new item name" />
+      <button onclick="updateStockNameItem()">Update Item Name</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // Firebase Initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-51lpbUdQGsWR1fMTPy9qAs-67X_UR60",
+      authDomain: "sales-b3b4f.firebaseapp.com",
+      databaseURL: "https://sales-b3b4f-default-rtdb.firebaseio.com",
+      projectId: "sales-b3b4f",
+      storageBucket: "sales-b3b4f.firebasestorage.app",
+      messagingSenderId: "983695219492",
+      appId: "1:983695219492:web:4d44d39b2fbc915abdf1b1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Load all stock items
+    function loadStock() {
+      const itemFilter = document.getElementById('itemFilter');
+      db.ref('stock').once('value', (snapshot) => {
+        const stock = snapshot.val();
+        if (stock) {
+          // Populate dropdown
+          itemFilter.innerHTML = `<option value="">-- Show All --</option>`;
+          Object.keys(stock).forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            itemFilter.appendChild(option);
+          });
+
+          // Show all stock initially
+          displayStock(stock);
+        }
+      });
+    }
+
+    // Display stock in table
+    function displayStock(stock) {
+      const stockDetails = document.getElementById('stockDetails');
+      const totalStockValue = document.getElementById('totalStockValue');
+      let totalValue = 0;
+
+      stockDetails.innerHTML = '';
+      Object.keys(stock).forEach(item => {
+        const stockItem = stock[item];
+        const itemValue = stockItem.quantity * stockItem.price;
+        totalValue += itemValue;
+
+        // Show 0 when stock is 0
+        const displayStockValue = stockItem.quantity === 0 ? '0' : stockItem.quantity;
+        
+        stockDetails.innerHTML += `
+          <tr>
+            <td>${item}</td>
+            <td>${displayStockValue}</td>
+            <td>${stockItem.price.toFixed(2)}</td>
+            <td>${itemValue.toFixed(2)}</td>
+            <td><button class="delete-button" onclick="deleteStock('${item}')">Delete</button></td>
+          </tr>
+        `;
+      });
+
+      totalStockValue.textContent = `Total Stock Value: ${totalValue.toFixed(2)}`;
+    }
+
+    // Filter stock by selected item
+    function filterItems() {
+      const selectedItem = document.getElementById('itemFilter').value;
+      db.ref('stock').once('value', (snapshot) => {
+        const stock = snapshot.val();
+        if (selectedItem) {
+          // Filter only the selected item
+          const filteredStock = { [selectedItem]: stock[selectedItem] };
+          displayStock(filteredStock);
+        } else {
+          // Show all stock
+          displayStock(stock);
+        }
+      });
+    }
+
+    // Add new stock item
+    function addStock() {
+      const newItemName = document.getElementById('newItemName').value.trim();
+      const newItemStock = document.getElementById('newItemStock').value;
+      const newItemPrice = document.getElementById('newItemPrice').value;
+
+      if (!newItemName || !newItemStock || !newItemPrice) {
+        alert('Please fill all fields to add a new item.');
+        return;
+      }
+
+      db.ref(`stock/${newItemName}`).set({
+        quantity: parseInt(newItemStock),
+        price: parseFloat(newItemPrice)
+      }).then(() => {
+        alert('New stock item added successfully.');
+        loadStock();
+        document.getElementById('newItemName').value = '';
+        document.getElementById('newItemStock').value = '';
+        document.getElementById('newItemPrice').value = '';
+        toggleAddStockForm(); // Hide form after adding stock
+      }).catch(error => {
+        alert('Error adding stock: ' + error.message);
+      });
+    }
+
+    // Update stock item (quantity and price)
+    function updateStockItem() {
+      const updateItemName = document.getElementById('updateItemName').value.trim();
+      const updateItemStock = document.getElementById('updateItemStock').value;
+      const updateItemPrice = document.getElementById('updateItemPrice').value;
+
+      if (!updateItemName || !updateItemStock || !updateItemPrice) {
+        alert('Please fill all fields to update stock.');
+        return;
+      }
+
+      db.ref(`stock/${updateItemName}`).update({
+        quantity: parseInt(updateItemStock),
+        price: parseFloat(updateItemPrice)
+      }).then(() => {
+        alert('Stock updated successfully.');
+        loadStock();
+        document.getElementById('updateItemName').value = '';
+        document.getElementById('updateItemStock').value = '';
+        document.getElementById('updateItemPrice').value = '';
+        toggleUpdateStockForm(); // Hide form after update
+      }).catch(error => {
+        alert('Error updating stock: ' + error.message);
+      });
+    }
+
+    // Update stock item name
+    function updateStockNameItem() {
+      const oldItemName = document.getElementById('oldItemName').value.trim();
+      const newItemNameForUpdate = document.getElementById('newItemNameForUpdate').value.trim();
+
+      if (!oldItemName || !newItemNameForUpdate) {
+        alert('Please provide both old and new item names.');
+        return;
+      }
+
+      const stockRef = db.ref('stock');
+
+      stockRef.once('value', snapshot => {
+        const stock = snapshot.val();
+        if (stock && stock[oldItemName]) {
+          const itemDetails = stock[oldItemName];
+          stockRef.child(newItemNameForUpdate).set(itemDetails)
+            .then(() => {
+              stockRef.child(oldItemName).remove();
+              alert('Item name updated successfully.');
+              loadStock();
+              document.getElementById('oldItemName').value = '';
+              document.getElementById('newItemNameForUpdate').value = '';
+              toggleUpdateStockNameForm(); // Hide form after name update
+            });
+        } else {
+          alert('Item not found.');
+        }
+      });
+    }
+
+    // Toggle add stock form visibility
+    function toggleAddStockForm() {
+      const addStockForm = document.getElementById('addStockForm');
+      addStockForm.style.display = addStockForm.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Toggle update stock form visibility
+    function toggleUpdateStockForm() {
+      const updateStockForm = document.getElementById('updateStockForm');
+      updateStockForm.style.display = updateStockForm.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Toggle update stock name form visibility
+    function toggleUpdateStockNameForm() {
+      const updateStockNameForm = document.getElementById('updateStockNameForm');
+      updateStockNameForm.style.display = updateStockNameForm.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Delete stock item
+    function deleteStock(itemName) {
+  const password = prompt('Enter password to delete item:');
+  
+  if (password === '123') {
+    const confirmDelete = confirm('Are you sure you want to delete this stock item?');
+    if (confirmDelete) {
+      db.ref(`stock/${itemName}`).remove()
+        .then(() => {
+          alert('Item deleted successfully.');
+          loadStock();
+        })
+        .catch(error => {
+          alert('Error deleting item: ' + error.message);
+        });
+    }
+  } else {
+    alert('Incorrect password. Deletion canceled.');
+  }
+}
+
+    loadStock();
+  </script>
+</body>
+</html>

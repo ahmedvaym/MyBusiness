@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AZ Motor Spare Delivery - Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2c2c2c;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #444;
+    }
+    th {
+      background-color: #b30000;
+    }
+    .progress-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-bar {
+      position: relative;
+      height: 10px;
+      width: 120px;
+      background: #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar div {
+      height: 100%;
+      background: #007bff;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .progress-bar.green div {
+      background: linear-gradient(90deg, #4caf50, #66bb6a);
+    }
+
+    .progress-percent {
+      font-size: 0.9rem;
+      font-weight: bold;
+      min-width: 35px;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 150px;
+      height: 8px;
+      background: #ddd;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #007bff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #007bff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .delete-btn {
+      background-color: #ff4d4d;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background-color: #e63939;
+    }
+  </style>
+</head>
+<body>
+  <h2>AZ Motor Spare Delivery - Data</h2>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Customer Name</th>
+        <th>Contact</th>
+        <th>Location</th>
+        <th>Progress</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmy836Pc3NBJfqv7ovKeLuXEroEKKljes",
+      authDomain: "delivery-d07af.firebaseapp.com",
+      databaseURL: "https://delivery-d07af-default-rtdb.firebaseio.com",
+      projectId: "delivery-d07af",
+      storageBucket: "delivery-d07af.appspot.com",
+      messagingSenderId: "18177223806",
+      appId: "1:18177223806:web:e09f3abf45b6d25fc2fc2f",
+      measurementId: "G-V7TC88WW4L",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+const tableBody = document.querySelector('#dataTable tbody');
+let activeIntervals = {}; // Store active intervals for progress updates
+
+// Listen for changes to 'deliveries' in Firebase and update the table
+database.ref('deliveries').on('value', (snapshot) => {
+  tableBody.innerHTML = '';
+  snapshot.forEach((childSnapshot) => {
+    const data = childSnapshot.val();
+    const progressBarClass = data.progress === 100 ? 'green' : '';
+
+    // Create table row
+    const row = `
+      <tr data-id="${childSnapshot.key}">
+        <td>${data.date}</td>
+        <td>${data.customerName}</td>
+        <td>${data.contact}</td>
+        <td>${data.location}</td>
+        <td>
+          <div class="progress-container">
+            <div class="progress-bar ${progressBarClass}">
+              <div style="width: ${data.progress}%"></div>
+            </div>
+            <span class="progress-percent">${data.progress}%</span>
+            <input type="range" min="0" max="100" value="${data.progress}" data-id="${childSnapshot.key}" class="progress-slider" disabled>
+            <input type="number" min="1" placeholder="Enter minutes" class="time-input" data-id="${childSnapshot.key}" ${data.approved ? '' : 'disabled'}>
+          </div>
+        </td>
+        <td>
+          <button class="approve-btn" data-id="${childSnapshot.key}" ${data.approved ? 'disabled' : ''}>Approve</button>
+          <button class="stop-btn" data-id="${childSnapshot.key}">${data.running ? 'Stop' : 'Resume'}</button>
+          <button class="delete-btn" data-id="${childSnapshot.key}">Delete</button>
+        </td>
+      </tr>
+    `;
+    tableBody.innerHTML += row;
+
+    if (data.running) {
+      startProgress(childSnapshot.key, data.startTime, data.timeInSeconds);
+    }
+  });
+});
+
+// Approve button
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('approve-btn')) {
+    const id = e.target.dataset.id;
+    database.ref(`deliveries/${id}`).update({ approved: true });
+    e.target.disabled = true;
+    document.querySelector(`tr[data-id='${id}'] .time-input`).disabled = false;
+  }
+});
+
+// Time input change
+document.addEventListener('change', (e) => {
+  if (e.target.classList.contains('time-input')) {
+    const id = e.target.dataset.id;
+    let timeInMinutes = parseFloat(e.target.value);
+
+    if (isNaN(timeInMinutes) || timeInMinutes < 1) {
+      alert("Please enter a valid number of minutes.");
+      return;
+    }
+
+    let timeInSeconds = timeInMinutes * 60;
+    let startTime = Date.now();
+
+    // Update Firebase with start time, total time, and running state
+    database.ref(`deliveries/${id}`).update({ startTime, timeInSeconds, running: true });
+  }
+});
+
+// Start progress function
+function startProgress(id, startTime, timeInSeconds) {
+  if (activeIntervals[id]) return;
+
+  activeIntervals[id] = setInterval(() => {
+    let elapsedTime = (Date.now() - startTime) / 1000;
+    let progress = (elapsedTime / timeInSeconds) * 100;
+
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(activeIntervals[id]);
+      delete activeIntervals[id];
+    }
+
+    database.ref(`deliveries/${id}`).update({ progress: Math.round(progress), running: true });
+  }, 1000);
+}
+
+// Stop/Resume button
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('stop-btn')) {
+    const id = e.target.dataset.id;
+    database.ref(`deliveries/${id}`).once('value').then((snapshot) => {
+      const data = snapshot.val();
+      if (data.running) {
+        clearInterval(activeIntervals[id]);
+        delete activeIntervals[id];
+        database.ref(`deliveries/${id}`).update({ running: false });
+        e.target.textContent = 'Resume';
+      } else {
+        let startTime = Date.now() - (data.progress / 100) * data.timeInSeconds * 1000;
+        database.ref(`deliveries/${id}`).update({ startTime, running: true });
+        startProgress(id, startTime, data.timeInSeconds);
+        e.target.textContent = 'Stop';
+      }
+    });
+  }
+});
+
+// Delete button
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('delete-btn')) {
+    const id = e.target.dataset.id;
+    clearInterval(activeIntervals[id]);
+    delete activeIntervals[id];
+    database.ref(`deliveries/${id}`).remove();
+  }
+});
+
+// Clear active intervals on page unload
+window.addEventListener('beforeunload', () => {
+  for (const id in activeIntervals) {
+    clearInterval(activeIntervals[id]);
+  }
+});
+
+
+
+
+  </script>
+</body>
+</html>

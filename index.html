@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Manager Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  --dark-color: #2c3e50;
+  --light-color: #ecf0f1;
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 70px;
+  --header-height: 60px;
+  --transition-speed: 0.3s;
+  --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  --radius: 8px;
+  --neon-blue: #0af;
+    --neon-purple: #a0f;
+    --glass-bg: rgba(20, 20, 30, 0.7);
+    --text-light: rgba(255, 255, 255, 0.9);
+}
+body {
+    background: #121218;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .password-modal {
+    position: relative;
+    padding: 2.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+
+  .password-modal::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    z-index: -1;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .password-modal:hover::before {
+    opacity: 0.5;
+    animation: rotateBorder 4s linear infinite;
+  }
+
+  @keyframes rotateBorder {
+    0% {
+      transform: rotate(0deg);
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: rotate(360deg);
+      opacity: 0.3;
+    }
+  }
+
+  .password-modal:hover {
+    transform: translateY(-5px);
+  }
+
+  #passwordTitle {
+    color: var(--text-light);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  #adminPassword {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  #adminPassword:focus {
+    outline: none;
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.2);
+  }
+
+  #adminPassword::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  #submitPassword {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #submitPassword:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 170, 255, 0.4);
+  }
+
+  #submitPassword::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+  }
+
+  #submitPassword:hover::before {
+    left: 100%;
+  }
+
+  .error-message {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    text-align: center;
+    min-height: 1.2rem;
+  }
+
+/* ===== BASE STYLES ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+body {
+  background-color: #f5f7fa;
+  color: #333;
+  overflow-x: hidden;
+
+}
+
+/* Dhivehi Font Face */
+@font-face {
+  font-family: 'Faruma';
+  src: url('Faruma.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Force Faruma for all Dhivehi text */
+
+ * {
+  font-family: 'Faruma','Segoe UI';
+}
+
+/* Exceptions for numbers and icons */
+.numbers,
+input[type="number"],
+input[type="tel"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+.digits {
+  font-family: 'Faruma','Segoe UI';
+
+}
+
+/* Icons should use their default font */
+i, .fas, .far, .fab, .material-icons {
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+/* RTL Direction for Dhivehi */
+body.rtl {
+  direction: rtl;
+}
+
+/* ===== PASSWORD OVERLAY ===== */
+.password-overlay {
+  /* Container positioning */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  
+  /* Background layers */
+  background: 
+    /* Transparent image layer */
+    url('360_F_410472701_KMPiSEm1HZDtWD1xT6kgLAiLs4RH33tE.jpg') center/cover no-repeat,
+    /* Dark overlay layer */
+    rgba(0, 0, 0, 0.8);
+  
+  /* Flex centering for content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  
+  /* Stacking context */
+  z-index: 9999;
+  
+  /* Image optimization */
+  background-blend-mode: normal;
+  background-attachment: fixed;
+  backdrop-filter: blur(2px);
+}
+
+/* For modern browser support */
+@supports (backdrop-filter: blur(2px)) {
+  .password-overlay {
+    background: 
+      url('fff.jpg') center/cover no-repeat;
+    backdrop-filter: brightness(0.2) blur(2px);
+  }
+}
+
+/* Alternative solution using pseudo-element (more cont
+.password-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.password-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: url('360_F_410472701_KMPiSEm1HZDtWD1xT6kgLAiLs4RH33tE.jpg') center/cover no-repeat;
+  opacity: 0.5;
+  z-index: -1;
+  animation: zoomPan 20s infinite alternate;
+}
+
+@keyframes zoomPan {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+/* Content styling */
+.branding-container {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.header-logo {
+  max-width: 180px;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+
+
+/* Branding Container Styles */
+.branding-container {
+  position: absolute;
+  top: 160px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  animation: float 6s ease-in-out infinite;
+}
+
+
+.header-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+}
+
+/* System Title Styles */
+.system-title {
+  font-size: 3rem;
+  margin: 0 0 20px 0;
+  padding: 0;
+  text-align: center;
+  color: #7e6b6b;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+/* Language Switcher */
+.language-switcher {
+  display: flex;
+  margin-left: 15px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.lang-btn {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Faruma', sans-serif;
+}
+
+.lang-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.lang-btn:not(.active):hover {
+  background-color: #f5f5f5;
+}
+
+/* ===== DASHBOARD LAYOUT ===== */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ===== SIDEBAR STYLES ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--dark-color);
+  color: white;
+  transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: var(--shadow);
+  left: 0;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-speed) ease;
+}
+
+.sidebar-header h3 {
+  margin-bottom: 5px;
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.sidebar-header p {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.sidebar-menu ul {
+  list-style: none;
+}
+
+.sidebar-menu li a {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  color: white;
+  text-decoration: none;
+  transition: all var(--transition-speed) ease;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Faruma', sans-serif;
+}
+
+.sidebar-menu li a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-menu li a.active {
+  background-color: var(--primary-color);
+}
+
+.sidebar-menu li a i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+  transition: all var(--transition-speed) ease;
+  flex-shrink: 0;
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+/* ===== COLLAPSED SIDEBAR ===== */
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+  overflow: hidden;
+}
+
+.sidebar.hidden {
+  transform: translateX(-100%);
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sidebar.collapsed .sidebar-header,
+.sidebar.hidden .sidebar-header {
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.sidebar.collapsed .sidebar-menu li a {
+  justify-content: center;
+  padding: 15px 0;
+}
+
+.sidebar.collapsed .sidebar-menu li a i {
+  margin-right: 0;
+  font-size: 1.3rem;
+}
+
+.sidebar.collapsed .sidebar-menu li a span {
+  display: none;
+}
+
+/* ===== SIDEBAR TOOLTIPS ===== */
+.sidebar.collapsed .sidebar-menu li a::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 15px;
+  background: var(--dark-color);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+  font-size: 0.9rem;
+  font-family: 'Faruma', sans-serif;
+}
+
+.sidebar.collapsed .sidebar-menu li a:hover::after {
+  opacity: 1;
+  visibility: visible;
+  margin-left: 20px;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+}
+
+.main-content.collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.main-content.expanded {
+  margin-left: 0;
+}
+
+/* ===== HEADER STYLES ===== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: var(--header-height);
+  background-color: white;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-right: 20px;
+  color: var(--dark-color);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-family: 'Faruma', sans-serif;
+}
+
+.menu-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.header-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all var(--transition-speed) ease;
+  font-family: 'Faruma', sans-serif;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.user-profile:hover {
+  opacity: 0.8;
+}
+
+.user-avatar {
+  width: 35px;
+  height: 35px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.logout-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 10px 0;
+  min-width: 150px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all var(--transition-speed) ease;
+}
+
+.user-profile:hover .logout-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.logout-dropdown a {
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  color: var(--dark-color);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-family: 'Faruma', sans-serif;
+}
+
+.logout-dropdown a:hover {
+  background-color: #f5f5f5;
+  color: var(--primary-color);
+}
+
+.logout-dropdown a i {
+  margin-right: 8px;
+  width: 20px;
+  text-align: center;
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+/* ===== CONTENT AREA ===== */
+.content-area {
+  padding: 20px;
+  transition: all var(--transition-speed) ease;
+}
+
+.section-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.section-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== DASHBOARD CARDS ===== */
+.dashboard-card {
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: 'Faruma', sans-serif;
+}
+
+.card-actions button {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Faruma', sans-serif;
+}
+
+.card-actions button:hover {
+  background-color: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+/* ===== BUSINESS CARDS ===== */
+.business-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.business-card {
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+/* Maintains your exact requested style with fixes */
+/* Your original styles with hover enhancements */
+.business-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    overflow: hidden;
+ 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    padding: 5px;
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+    position: relative; /* For pseudo-element effects */
+}
+
+.business-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    max-width: 90%;
+    max-height: 90%;
+    transition: all 0.3s ease; /* Smooth image transition */
+    z-index: 2; /* Keeps image above pseudo-elements */
+}
+
+/* Hover Effects */
+.business-logo:hover {
+    border-color: #cf2222; /* Changes border color */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Glow effect */
+    transform: scale(1.05); /* Slight grow effect */
+}
+
+.business-logo:hover img {
+    transform: scale(1.1); /* Slight zoom */
+}
+
+/* Optional advanced effects */
+.business-logo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, 
+                rgba(255,255,255,0.8) 0%, 
+                rgba(255,255,255,0) 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+.business-logo:hover::before {
+    opacity: 0.6; /* Shine effect */
+}
+
+/* Pulsing animation on hover */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.business-logo:hover {
+    animation: pulse 2s infinite;
+}
+
+.business-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.business-card h3 {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  font-family: 'Faruma', sans-serif;
+}
+
+.business-card i {
+  margin-right: 10px;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  font-family: 'Font Awesome 5 Free' !important;
+}
+
+.business1-icon {
+  color: var(--primary-color);
+}
+
+.business2-icon {
+  color: var(--danger-color);
+}
+
+.business3-icon {
+  color: var(--secondary-color);
+}
+
+.manage-btn {
+  margin-top: 15px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Faruma', sans-serif;
+}
+
+.manage-btn:hover {
+  background-color: #422d2d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== BUSINESS TABS ===== */
+.business-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  padding: 0 20px;
+}
+
+.business-tab {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-family: 'Faruma', sans-serif;
+}
+
+.business-tab:hover {
+  color: var(--primary-color);
+}
+
+.business-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* ===== IFRAME CONTAINER ===== */
+.iframe-container {
+  padding: 20px;
+}
+
+iframe {
+  width: 100%;
+  min-height: 900px;
+  border: none;
+  border-radius: var(--radius);
+  background-color: #f9f9f9;
+}
+
+/* ===== FORM STYLES ===== */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-family: 'Faruma', sans-serif;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: 'Faruma', sans-serif;
+}
+
+.form-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  outline: none;
+}
+
+.save-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin: 20px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.save-btn:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.hidden {
+  display: none !important;
+}
+
+.transition-all {
+  transition: all var(--transition-speed) ease;
+}
+
+/* RTL form adjustments */
+body.rtl .form-group input {
+  text-align: right;
+  direction: rtl;
+}
+
+body.rtl .save-btn {
+  margin-right: 20px;
+  margin-left: 0;
+}
+
+/* RTL business tabs */
+body.rtl .business-tabs {
+  flex-direction: row-reverse;
+}
+
+/* RTL iframe content */
+body.rtl iframe {
+  direction: rtl;
+}
+
+/* RTL card actions */
+body.rtl .card-actions {
+  direction: ltr; /* Keep icons LTR */
+}
+
+/* RTL manage buttons */
+body.rtl .manage-btn {
+  direction: ltr; /* Keep icons LTR */
+  justify-content: flex-end;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    z-index: 1000;
+  }
+  
+  .sidebar.visible {
+    transform: translateX(0);
+  }
+  
+  .sidebar.collapsed {
+    width: 280px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.visible.collapsed {
+    transform: translateX(0);
+    width: 70px;
+  }
+  
+  .main-content,
+  .main-content.collapsed,
+  .main-content.expanded {
+    margin-left: 0 !important;
+  }
+  
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-speed) ease;
+  }
+  
+  .sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .business-cards-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .menu-toggle {
+    margin-right: 10px;
+  }
+  
+  .logout-dropdown {
+    right: 20px;
+  }
+  
+  /* RTL mobile adjustments */
+  body.rtl .sidebar {
+    transform: translateX(100%);
+  }
+  
+  body.rtl .sidebar.visible {
+    transform: translateX(0);
+  }
+  
+  body.rtl .logout-dropdown {
+    right: auto;
+    left: 20px;
+  }
+}
+
+/* Special Dhivehi text elements */
+.dhivehi-text,
+[lang="dv"],
+[data-lang="dv"] {
+  font-family: 'Faruma', sans-serif !important;
+  line-height: 1.6;
+}
+
+/* System-wide Dhivehi font when language is set */
+body.dhivehi-lang,
+body.dhivehi-lang *:not(.numbers) {
+  font-family: 'Faruma', sans-serif;
+}
+
+body.dhivehi-lang .header-title,
+body.dhivehi-lang .card-title,
+body.dhivehi-lang .form-group label,
+body.dhivehi-lang .business-tab,
+body.dhivehi-lang .manage-btn,
+body.dhivehi-lang .save-btn {
+  font-family: 'Faruma', sans-serif;
+}
+
+/* Ensure form inputs maintain consistent font */
+body.dhivehi-lang input,
+body.dhivehi-lang button,
+body.dhivehi-lang textarea {
+  font-family: 'Faruma', sans-serif;
+}
+
+/* Special styling for Dhivehi numbers */
+body.dhivehi-lang .numbers {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Fix for font inheritance in specific elements */
+body.dhivehi-lang .menu-toggle,
+body.dhivehi-lang .lang-btn,
+body.dhivehi-lang .card-actions button {
+  font-family: 'Faruma', sans-serif;
+}
+
+/* Fix for icons in buttons */
+body.dhivehi-lang .manage-btn i,
+body.dhivehi-lang .save-btn i,
+body.dhivehi-lang .card-actions button i {
+  font-family: 'Font Awesome 5 Free';
+}
+
+/* Fix for password modal */
+body.dhivehi-lang .password-modal h3,
+body.dhivehi-lang .password-modal button {
+  font-family: 'Faruma', sans-serif;
+}
+/* General styling for the navigation menu */
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 250px;
+  background-color: #2c3e50;
+  height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Styling for each list item */
+li a {
+  display: block;
+  color: #ecf0f1;
+  padding: 15px 20px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+/* Hover effect for menu items */
+li a:hover {
+  background-color: #34495e;
+  color: #ffffff;
+  border-left: 4px solid #3498db;
+}
+
+/* Active menu item styling */
+li a.active {
+  background-color: #34495e;
+  color: #ffffff;
+  border-left: 4px solid #3498db;
+  font-weight: bold;
+}
+
+/* Icon styling */
+li a i {
+  width: 20px;
+  text-align: center;
+  margin-right: 10px;
+}
+
+/* Logout button styling - can make it stand out */
+#logoutBtn {
+  margin-top: 20px;
+  border-top: 1px solid #34495e;
+  padding-top: 20px;
+  color: #e74c3c;
+}
+
+#logoutBtn:hover {
+  color: #c0392b;
+  border-left: 4px solid #e74c3c;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  ul {
+    width: 100%;
+    height: auto;
+  }
+  
+  li a {
+    padding: 12px 15px;
+  }
+  
+  li a span {
+    display: inline-block;
+  }
+}
+
+/* Fix for system title */
+@font-face {
+      font-family: 'SameeAvasThaana';
+      src: url('fonts/Samee_Avas_Thaana.ttf'); /* Ensure the font file is in the correct path */
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #333;
+      font-family: 'SameeAvasThaana', sans-serif; /* Apply Dhivehi font */
+    }
+    /* Ultra-smooth 4K animations */
+@keyframes pulse-4k {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.3));
+  }
+}
+
+.branding-container {
+  /* Animation */
+  animation: pulse-4k 6s ease-in-out infinite;
+  
+  /* 4K Quality Enhancements */
+  will-change: transform, filter;
+  transform: perspective(1000px) translateZ(0);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  
+  /* Smooth transitions for hover */
+  transition: all 0.4s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* Premium Hover Effects */
+.branding-container:hover {
+  animation-play-state: paused;
+  transform: scale(1.05) perspective(1000px) rotateX(0.5deg) rotateY(0.5deg);
+  filter: 
+    drop-shadow(0 0 15px rgba(226, 220, 220, 0.5))
+    brightness(105%);
+  
+  /* Glow effect on children */
+  & .header-logo, & .system-title {
+    transition: all 0.3s ease-out;
+  }
+  
+  & .header-logo {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+  }
+  
+  & 
+}
+
+/* 4K Display Optimization */
+@media (min-width: 3840px) {
+  .branding-container {
+    animation-duration: 8s;
+    animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+}
+    </style>
+</head>
+
+
+<div class="password-overlay" id="passwordOverlay">
+  <div class="branding-container">
+      <img src="mmm-removebg-preview.png" alt="Business Logo" class="header-logo">
+      <h1 class="system-title" id="systemTitle">qkeT.qlaTijiD</h1>
+  </div>
+  <div class="password-modal">
+      <h3 id="passwordTitle">Admin Access Required</h3>
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+      <button id="submitPassword"><span id="submitText">Login</span></button>
+      <p id="passwordError" class="error-message"></p>
+  </div>
+</div>
+
+<div class="dashboard-container" id="dashboardContainer" style="display: none;">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 id="sidebarTitle">LAST HUNT ONLINE</h3>
+            <p id="sidebarSubtitle">SP-0639/2014</p>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li><a href="#" class="active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i> <span data-i18n="dashboard">Dashboard</span></a></li>
+                <li><a href="#" data-section="business1"><i class="fas fa-store"></i> <span data-i18n="business1">AZ MOTOR SPARE</span></a></li>
+                <li><a href="#" data-section="business2"><i class="fas fa-store"></i> <span data-i18n="business2">AZ VARIETY STORE</span></a></li>
+                <li><a href="#" data-section="business3"><i class="fas fa-store"></i> <span data-i18n="business3">UNIK CLOSET</span></a></li>
+                <li><a href="#" data-section="settings"><i class="fas fa-cog"></i> <span data-i18n="settings">Settings</span></a></li>
+                <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+                <div class="header-title" id="headerTitle" data-i18n="dashboardOverview">Dashboard Overview</div>
+            </div>
+            <div class="header-right">
+                <div class="language-switcher">
+                    <button id="enLang" class="lang-btn active">EN</button>
+                    <button id="dvLang" class="lang-btn">DH</button>
+                </div>
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar">AD</div>
+                    <span id="adminText" data-i18n="admin">Admin</span>
+                    <div class="logout-dropdown">
+                        <a href="#" id="dropdownLogoutBtn"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Dashboard Section -->
+            <div class="dashboard-section section-content active" id="dashboard-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title" data-i18n="businessOverview">Business Overview</div>
+                    </div>
+                    <p data-i18n="welcomeMessage">Welcome to your Business Management Dashboard. Select a business from the sidebar to manage.</p>
+                    
+                    <div class="business-cards-container">
+                      <div class="business-card">
+                          <div class="business-logo">
+                              <img src="555-removebg-preview.png" alt="AZ MOTOR SPARE Logo">
+                          </div>
+                          <h3><i class="fas fa-store business1-icon"></i> <span data-i18n="business1">AZ MOTOR SPARE</span></h3>
+                          <p data-i18n="business1Summary">Quick stats or summary for Business</p>
+                          <button class="manage-btn" data-business="business1"><span data-i18n="manage">Manage</span></button>
+                      </div>
+                      <div class="business-card">
+                          <div class="business-logo">
+                              <img src="final AZV.jpg" alt="AZ VARIETY STORE Logo">
+                          </div>
+                          <h3><i class="fas fa-store business2-icon"></i> <span data-i18n="business2">AZ VARIETY STORE</span></h3>
+                          <p data-i18n="business2Summary">Quick stats or summary for Business</p>
+                          <button class="manage-btn" data-business="business2"><span data-i18n="manage">Manage</span></button>
+                      </div>
+                      <div class="business-card">
+                          <div class="business-logo">
+                              <img src="Unique Closet.jpg" alt="UNIK CLOSET Logo">
+                          </div>
+                          <h3><i class="fas fa-store business3-icon"></i> <span data-i18n="business3">UNIK CLOSET</span></h3>
+                          <p data-i18n="business3Summary">Quick stats or summary for Business</p>
+                          <button class="manage-btn" data-business="business3"><span data-i18n="manage">Manage</span></button>
+                      </div>
+                  </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business 1 Section -->
+            <div class="business-section section-content" id="business1-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title" data-i18n="business1">AZ MOTOR SPARE</div>
+                        <div class="card-actions">
+                            <button id="refresh-business1"><i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span></button>
+                        </div>
+                    </div>
+                    <div class="business-tabs">
+                        <div class="business-tab active" data-tab="home" data-business="business1" data-i18n="website">Website</div>
+                        <div class="business-tab" data-tab="orders" data-business="business1" data-i18n="salesEntry">Sales Entry</div>
+                        <div class="business-tab" data-tab="products" data-business="business1" data-i18n="stockManagement">Stock Management</div>
+                        <div class="business-tab" data-tab="customers" data-business="business1" data-i18n="keyAccount">Key Account</div>
+                        <div class="business-tab" data-tab="Delivery" data-business="business1" data-i18n="delivery">Delivery</div>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="business1-iframe" src="business1/home.html" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business 2 Section -->
+            <div class="business-section section-content" id="business2-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title" data-i18n="business2">AZ VARIETY STORE Management</div>
+                        <div class="card-actions">
+                            <button id="refresh-business2"><i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span></button>
+                        </div>
+                    </div>
+                    <div class="business-tabs">
+                        <div class="business-tab active" data-tab="home" data-business="business2" data-i18n="home">Home</div>
+                        <div class="business-tab" data-tab="services" data-business="business2" data-i18n="services">Services</div>
+                        <div class="business-tab" data-tab="bookings" data-business="business2" data-i18n="bookings">Bookings</div>
+                        <div class="business-tab" data-tab="clients" data-business="business2" data-i18n="clients">Clients</div>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="business2-iframe" src="business2/home.html" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business 3 Section -->
+            <div class="business-section section-content" id="business3-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title" data-i18n="business3">UNIK CLOSET Management</div>
+                        <div class="card-actions">
+                            <button id="refresh-business3"><i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Refresh</span></button>
+                        </div>
+                    </div>
+                    <div class="business-tabs">
+                        <div class="business-tab active" data-tab="home" data-business="business3" data-i18n="home">Home</div>
+                        <div class="business-tab" data-tab="inventory" data-business="business3" data-i18n="inventory">Inventory</div>
+                        <div class="business-tab" data-tab="suppliers" data-business="business3" data-i18n="suppliers">Suppliers</div>
+                        <div class="business-tab" data-tab="reports" data-business="business3" data-i18n="reports">Reports</div>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="business3-iframe" src="business3/home.html" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="settings-section section-content" id="settings-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-title" data-i18n="dashboardSettings">Dashboard Settings</div>
+                    </div>
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label for="business1-url" data-i18n="business1Url">AZ Motor Spare Website URL</label>
+                            <input type="text" id="business1-url" name="business1-url" placeholder="https://example.com/business1/home">
+                        </div>
+                        <div class="form-group">
+                            <label for="business2-url" data-i18n="business2Url">AZ Variety Store Home URL</label>
+                            <input type="text" id="business2-url" name="business2-url" placeholder="https://example.com/business2/home">
+                        </div>
+                        <div class="form-group">
+                            <label for="business3-url" data-i18n="business3Url">UNIK CLOSET Home URL</label>
+                            <input type="text" id="business3-url" name="business3-url" placeholder="https://example.com/business3/home">
+                        </div>
+                        <button type="submit" class="save-btn"><span data-i18n="saveSettings">Save Settings</span></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <script>document.addEventListener('DOMContentLoaded', function() {
+      // Password Protection
+      const passwordOverlay = document.getElementById('passwordOverlay');
+      const dashboardContainer = document.getElementById('dashboardContainer');
+      const adminPasswordInput = document.getElementById('adminPassword');
+      const submitPasswordBtn = document.getElementById('submitPassword');
+      const passwordError = document.getElementById('passwordError');
+      const correctPassword = '8555'; // Set your password here
+  
+      // Check if password is already entered (in sessionStorage)
+      if (sessionStorage.getItem('authenticated') === 'true') {
+          passwordOverlay.style.display = 'none';
+          dashboardContainer.style.display = 'flex';
+          initDashboard(); // Initialize the dashboard if authenticated
+      } else {
+          passwordOverlay.style.display = 'flex';
+          dashboardContainer.style.display = 'none';
+      }
+  
+      // Handle password submission
+      submitPasswordBtn.addEventListener('click', function() {
+          const enteredPassword = adminPasswordInput.value.trim();
+          
+          if (enteredPassword === correctPassword) {
+              // Correct password
+              sessionStorage.setItem('authenticated', 'true');
+              passwordOverlay.style.display = 'none';
+              dashboardContainer.style.display = 'flex';
+              initDashboard();
+          } else {
+              // Wrong password
+              passwordError.textContent = 'Incorrect password. Please try again.';
+              adminPasswordInput.value = '';
+              adminPasswordInput.focus();
+          }
+      });
+  
+      // Allow pressing Enter to submit password
+      adminPasswordInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+              submitPasswordBtn.click();
+          }
+      });
+  
+      // Initialize dashboard after password verification
+      function initDashboard() {
+          // DOM Elements
+          const menuToggle = document.getElementById('menuToggle');
+          const sidebar = document.getElementById('sidebar');
+          const mainContent = document.getElementById('mainContent');
+          const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+          const sectionContents = document.querySelectorAll('.section-content');
+          const headerTitle = document.getElementById('headerTitle');
+          const manageButtons = document.querySelectorAll('.manage-btn');
+          const businessTabs = document.querySelectorAll('.business-tab');
+          const logoutBtn = document.getElementById('logoutBtn');
+          const dropdownLogoutBtn = document.getElementById('dropdownLogoutBtn');
+          const enLangBtn = document.getElementById('enLang');
+          const dvLangBtn = document.getElementById('dvLang');
+          const refreshButtons = {
+              business1: document.getElementById('refresh-business1'),
+              business2: document.getElementById('refresh-business2'),
+              business3: document.getElementById('refresh-business3')
+          };
+          const iframes = {
+              business1: document.getElementById('business1-iframe'),
+              business2: document.getElementById('business2-iframe'),
+              business3: document.getElementById('business3-iframe')
+          };
+          const settingsForm = document.getElementById('settings-form');
+          const sidebarOverlay = document.createElement('div');
+          sidebarOverlay.className = 'sidebar-overlay';
+          document.body.appendChild(sidebarOverlay);
+  
+          let sidebarState = 'expanded'; // expanded/collapsed/hidden
+  
+          // Language switching
+          enLangBtn.addEventListener('click', function() {
+              document.body.classList.remove('rtl');
+              enLangBtn.classList.add('active');
+              dvLangBtn.classList.remove('active');
+              // Here you would also trigger your i18n function to switch to English
+              updateLanguage('en');
+          });
+  
+          dvLangBtn.addEventListener('click', function() {
+              document.body.classList.add('rtl');
+              dvLangBtn.classList.add('active');
+              enLangBtn.classList.remove('active');
+              // Here you would also trigger your i18n function to switch to Dhivehi
+              updateLanguage('dv');
+          });
+  
+          // Logout functionality
+          function logout() {
+              sessionStorage.removeItem('authenticated');
+              window.location.reload();
+          }
+  
+          // Setup logout buttons
+          if (logoutBtn) logoutBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              logout();
+          });
+  
+          if (dropdownLogoutBtn) dropdownLogoutBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              logout();
+          });
+  
+          // Mobile sidebar toggle
+          menuToggle.addEventListener('click', function() {
+              if (window.innerWidth <= 768) {
+                  // Mobile behavior
+                  sidebar.classList.toggle('visible');
+                  sidebarOverlay.classList.toggle('visible');
+              } else {
+                  // Desktop behavior - cycle through states
+                  if (sidebarState === 'expanded') {
+                      // First click - collapse
+                      sidebarState = 'collapsed';
+                      sidebar.classList.add('collapsed');
+                      sidebar.classList.remove('hidden');
+                      mainContent.classList.add('collapsed');
+                      mainContent.classList.remove('expanded');
+                  } else if (sidebarState === 'collapsed') {
+                      // Second click - hide completely
+                      sidebarState = 'hidden';
+                      sidebar.classList.add('hidden');
+                      sidebar.classList.remove('collapsed');
+                      mainContent.classList.add('expanded');
+                      mainContent.classList.remove('collapsed');
+                  } else {
+                      // Third click - return to expanded
+                      sidebarState = 'expanded';
+                      sidebar.classList.remove('hidden', 'collapsed');
+                      mainContent.classList.remove('expanded', 'collapsed');
+                  }
+              }
+          });
+  
+          // Close sidebar when clicking overlay on mobile
+          sidebarOverlay.addEventListener('click', function() {
+              sidebar.classList.remove('visible');
+              sidebarOverlay.classList.remove('visible');
+          });
+  
+          // Handle window resize
+          window.addEventListener('resize', function() {
+              if (window.innerWidth > 768) {
+                  sidebar.classList.remove('visible');
+                  sidebarOverlay.classList.remove('visible');
+              }
+          });
+  
+          // Add tooltip attributes to sidebar items
+          document.querySelectorAll('.sidebar-menu li a').forEach(link => {
+              const text = link.querySelector('span').textContent;
+              link.setAttribute('data-tooltip', text);
+          });
+  
+          // Handle sidebar navigation
+          sidebarLinks.forEach(link => {
+              link.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  
+                  // Remove active class from all links
+                  sidebarLinks.forEach(l => l.classList.remove('active'));
+                  
+                  // Add active class to clicked link
+                  this.classList.add('active');
+                  
+                  // Get section to show
+                  const sectionId = this.getAttribute('data-section');
+                  
+                  // Update header title
+                  updateHeaderTitle(this.querySelector('span').textContent);
+                  
+                  // Show corresponding section
+                  showSection(sectionId);
+                  
+                  // If it's a business section, load the home tab
+                  if (sectionId.startsWith('business')) {
+                      loadBusinessTab(sectionId, 'home');
+                  }
+  
+                  // Close sidebar on mobile after selection
+                  if (window.innerWidth <= 768) {
+                      sidebar.classList.remove('visible');
+                      sidebarOverlay.classList.remove('visible');
+                  }
+              });
+          });
+  
+          // Handle manage buttons on dashboard
+          manageButtons.forEach(button => {
+              button.addEventListener('click', function() {
+                  const business = this.getAttribute('data-business');
+                  
+                  // Update sidebar active link
+                  sidebarLinks.forEach(link => link.classList.remove('active'));
+                  document.querySelector(`.sidebar-menu a[data-section="${business}"]`).classList.add('active');
+                  
+                  // Update header title
+                  const businessName = this.parentElement.querySelector('h3').textContent;
+                  updateHeaderTitle(businessName);
+                  
+                  // Show corresponding section
+                  showSection(business);
+                  
+                  // Load default tab for this business
+                  loadBusinessTab(business, 'home');
+              });
+          });
+  
+          // Handle business tabs
+          businessTabs.forEach(tab => {
+              tab.addEventListener('click', function() {
+                  const business = this.getAttribute('data-business');
+                  const tabName = this.getAttribute('data-tab');
+                  
+                  // Update active tab
+                  document.querySelectorAll(`.business-tab[data-business="${business}"]`).forEach(t => {
+                      t.classList.remove('active');
+                  });
+                  this.classList.add('active');
+                  
+                  // Load the tab content
+                  loadBusinessTab(business, tabName);
+              });
+          });
+  
+          // Handle refresh buttons
+          Object.keys(refreshButtons).forEach(business => {
+              if (refreshButtons[business]) {
+                  refreshButtons[business].addEventListener('click', function() {
+                      refreshIframe(business);
+                  });
+              }
+          });
+  
+          // Handle settings form submission
+          if (settingsForm) {
+              settingsForm.addEventListener('submit', function(e) {
+                  e.preventDefault();
+                  
+                  // Get form values
+                  const business1Url = document.getElementById('business1-url').value;
+                  const business2Url = document.getElementById('business2-url').value;
+                  const business3Url = document.getElementById('business3-url').value;
+                  
+                  // Save to localStorage
+                  localStorage.setItem('business1-url', business1Url);
+                  localStorage.setItem('business2-url', business2Url);
+                  localStorage.setItem('business3-url', business3Url);
+                  
+                  // Show success message
+                  alert('Settings saved successfully!');
+                  
+                  // If we're currently viewing a home tab, refresh it to show the new URL
+                  const activeSections = document.querySelectorAll('.section-content.active');
+                  activeSections.forEach(section => {
+                      if (section.id.includes('business')) {
+                          const business = section.id.split('-')[0];
+                          const activeTab = document.querySelector(`.business-tab.active[data-business="${business}"]`);
+                          if (activeTab && activeTab.getAttribute('data-tab') === 'home') {
+                              refreshIframe(business);
+                          }
+                      }
+                  });
+              });
+          }
+  
+          // Load saved settings
+          function loadSettings() {
+              const business1Url = localStorage.getItem('business1-url');
+              const business2Url = localStorage.getItem('business2-url');
+              const business3Url = localStorage.getItem('business3-url');
+              
+              if (business1Url) document.getElementById('business1-url').value = business1Url;
+              if (business2Url) document.getElementById('business2-url').value = business2Url;
+              if (business3Url) document.getElementById('business3-url').value = business3Url;
+          }
+  
+          // Show the selected section
+          function showSection(sectionId) {
+              // Hide all sections
+              sectionContents.forEach(section => {
+                  section.classList.remove('active');
+              });
+              
+              // Show selected section
+              document.getElementById(`${sectionId}-section`).classList.add('active');
+          }
+  
+          // Update header title
+          function updateHeaderTitle(title) {
+              headerTitle.textContent = title;
+          }
+  
+          // Load business tab content
+          function loadBusinessTab(business, tabName) {
+              const iframe = iframes[business];
+              
+              // Define the local HTML files for each business tab
+              const tabFiles = {
+                  'business1': {
+                      'home': localStorage.getItem('business1-url') || 'business1/home.html',
+                      'products': 'AZMotorespareStockManagement.html',
+                      'orders': 'Sparesales_entry.html',
+                      'customers': 'AZMtoreSpareSalesdata.html',
+                      'Delivery': 'DeliveryData.html'
+                  },
+                  'business2': {
+                      'home': localStorage.getItem('business2-url') || 'business2/home.html',
+                      'services': 'business2/services.html',
+                      'bookings': 'business2/bookings.html',
+                      'clients': 'business2/clients.html'
+                  },
+                  'business3': {
+                      'home': localStorage.getItem('business3-url') || 'business3/home.html',
+                      'inventory': 'business3/inventory.html',
+                      'suppliers': 'business3/suppliers.html',
+                      'reports': 'business3/reports.html'
+                  }
+              };
+              
+              // Load the corresponding file/URL
+              if (tabFiles[business] && tabFiles[business][tabName]) {
+                  iframe.src = tabFiles[business][tabName];
+              } else {
+                  console.error(`Tab ${tabName} not found for ${business}`);
+              }
+          }
+  
+          // Refresh iframe
+          function refreshIframe(business) {
+              const iframe = iframes[business];
+              if (iframe) {
+                  iframe.src = iframe.src; // Reload by resetting src
+              }
+          }
+  
+          // Update language
+          function updateLanguage(lang) {
+              // This would be handled by your i18n.js file
+              console.log(`Switching to ${lang === 'en' ? 'English' : 'Dhivehi'}`);
+              // You would typically call a function from your i18n.js here
+          }
+  
+          // Initialize settings
+          loadSettings();
+      }
+  });</script>
+ <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarOverlay = document.createElement('div');
+        sidebarOverlay.className = 'sidebar-overlay';
+        document.body.appendChild(sidebarOverlay);
+
+        let sidebarState = 'expanded'; // expanded/collapsed/hidden
+
+        menuToggle.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                // Mobile behavior
+                sidebar.classList.toggle('visible');
+                sidebarOverlay.classList.toggle('visible');
+            } else {
+                // Desktop behavior - cycle through states
+                if (sidebarState === 'expanded') {
+                    // First click - collapse
+                    sidebarState = 'collapsed';
+                    sidebar.classList.add('collapsed');
+                    sidebar.classList.remove('hidden');
+                    mainContent.classList.add('collapsed');
+                    mainContent.classList.remove('expanded');
+                } else if (sidebarState === 'collapsed') {
+                    // Second click - hide completely
+                    sidebarState = 'hidden';
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('collapsed');
+                    mainContent.classList.add('expanded');
+                    mainContent.classList.remove('collapsed');
+                } else {
+                    // Third click - return to expanded
+                    sidebarState = 'expanded';
+                    sidebar.classList.remove('hidden', 'collapsed');
+                    mainContent.classList.remove('expanded', 'collapsed');
+                }
+            }
+        });
+
+        // Close sidebar when clicking overlay on mobile
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('visible');
+            sidebarOverlay.classList.remove('visible');
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('visible');
+                sidebarOverlay.classList.remove('visible');
+            }
+        });
+
+        // Add tooltip attributes to sidebar items
+        document.querySelectorAll('.sidebar-menu li a').forEach(link => {
+            const text = link.querySelector('span').textContent;
+            link.setAttribute('data-tooltip', text);
+        });
+    });
+</script>
+<script>
+  // Internationalization for the dashboard
+const translations = {
+    en: {
+        // Password screen
+        systemTitle: "qkeT.qlaTijiD",
+        passwordTitle: "Admin Access Required",
+        submitText: "Login",
+        
+        // Sidebar
+        dashboard: "Dashboard",
+        business1: "AZ MOTOR SPARE",
+        business2: "AZ VARIETY STORE",
+        business3: "UNIK CLOSET",
+        settings: "Settings",
+        logout: "Logout",
+        sidebarTitle: "LAST HUNT ONLINE",
+        sidebarSubtitle: "SP-0639/2014",
+        
+        // Header
+        dashboardOverview: "Dashboard Overview",
+        admin: "Admin",
+        
+        // Dashboard
+        businessOverview: "Business Overview",
+        welcomeMessage: "Welcome to your Business Management Dashboard. Select a business from the sidebar to manage.",
+        business1Summary: "Spare parts inventory and sales management",
+        business2Summary: "General goods retail management",
+        business3Summary: "Fashion retail and inventory",
+        manage: "Manage",
+        
+        // Business tabs
+        website: "Website",
+        salesEntry: "Sales Entry",
+        stockManagement: "Stock Management",
+        keyAccount: "Key Account",
+        delivery: "Delivery",
+        home: "Home",
+        services: "Services",
+        bookings: "Bookings",
+        clients: "Clients",
+        inventory: "Inventory",
+        suppliers: "Suppliers",
+        reports: "Reports",
+        refresh: "Refresh",
+        
+        // Settings
+        dashboardSettings: "Dashboard Settings",
+        business1Url: "AZ Motor Spare Website URL",
+        business2Url: "AZ Variety Store Home URL",
+        business3Url: "UNIK CLOSET Home URL",
+        saveSettings: "Save Settings"
+    },
+    dv: {
+        // Password screen
+        systemTitle: "qkeT.qlaTijiD",
+        passwordTitle: "އެޑްމިން އެކްސެސް މަޖުބޫރު",
+        submitText:"ލޮގިން",
+        
+        // Sidebar
+        dashboard: "ޑޭޝްބޯޑް",
+        business1: "އޭ.ޒެޑް މޮޓޯ ސްޕެއަރ",
+        business2: "އޭ.ޒެޑް ވެރައިޓީ ސްޓޯރ",
+        business3: "ޔުނިކް ކްލޯސެޓް",
+        settings: "ސެޓިންގްސް",
+        logout: "ލޮގް އައުޓް",
+        sidebarTitle: "ލާސްޓް ހަންޓް އޮންލައިން",
+        sidebarSubtitle: "އެސްޕީ-0639/2014",
+        
+        // Header
+        dashboardOverview: "ޑޭޝްބޯޑް އޮވަރވިއު",
+        admin: "އެޑްމިން",
+        
+        // Dashboard
+        businessOverview: "ވިޔަފާރީގެ ޚުލާޞާ",
+        welcomeMessage: "ތިބާގެ ވިޔަފާރި މެނޭޖްމަންޓް ޑޭޝްބޯޑަށް މަރުޙަބާ. މެނޭޖްކުރުމަށް ސައިޑްބާރުން ވިޔަފާރިއެއް އިޚްތިޔާރުކުރައްވާ",
+        business1Summary: "ސްޕެއަރ ޕާޓްސް، އިންވެންޓްރީ އަދި ވިއްކުމުގެ ނިޒާމު",
+        business2Summary: "އާންމު މުދާ ވިއްކުމުގެ ވިޔަފާރި ހިންގުން",
+        business3Summary: "ފެޝަން ވިއްކުން އަދި ސްޓޯކް ނިޒާމު",
+        manage: "ނިޒާމުތައް ބަލާއިރުން",
+        
+        // Business tabs
+        website: "ވެބްސައިޓް",
+        salesEntry: "ސޭލްސް އެންޓްރީ",
+        stockManagement:"ސްޓޮކް ",
+        keyAccount: "ސޭލްސް ލޮގް",
+        delivery: "ޑެލިވަރީ",
+        home: "ހޯމް",
+        services: "ސަރވިސް",
+        bookings: "ބުކިންގް",
+        clients: "ކުރިއަށް ވަންނަ މީހުން",
+        inventory: "ސްޓޯކް",
+        suppliers: "ސަޕްލައިއަރސް",
+        reports: "ރިޕޯޓްސް",
+        refresh: "ރިފްރެޝް",
+        
+        // Settings
+        dashboardSettings: "ޑޭޝްބޯޑް ސެޓިންގްސް",
+        business1Url: "އޭޒީ މޯޓަރ ސްޕޭރ ވެބްސައިޓް ޔޫއާރލް",
+        business2Url: "އޭޒީ ވަރައިއެޓީ ސްޓޯރ ހޯމް ޔޫއާރލް",
+        business3Url: "ޔުނިކް ކްލޯޒެޓް ހޯމް ޔޫއާރލް",
+        saveSettings: "ސެޓިންގްސް ސޭވް ކުރަން"
+    }
+};
+
+// Current language
+let currentLanguage = 'en';
+
+// Function to update all text elements with translations
+function updateTranslations(lang) {
+    currentLanguage = lang;
+    
+    // Update password screen
+    document.getElementById('systemTitle').textContent = translations[lang].systemTitle;
+    document.getElementById('passwordTitle').textContent = translations[lang].passwordTitle;
+    document.getElementById('submitText').textContent = translations[lang].submitText;
+    
+    // Update sidebar
+    document.getElementById('sidebarTitle').textContent = translations[lang].sidebarTitle;
+    document.getElementById('sidebarSubtitle').textContent = translations[lang].sidebarSubtitle;
+    
+    // Update all elements with data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+            element.textContent = translations[lang][key];
+        }
+    });
+    
+    // Update tooltips in collapsed sidebar
+    document.querySelectorAll('.sidebar-menu li a').forEach(link => {
+        const key = link.querySelector('span').getAttribute('data-i18n');
+        if (translations[lang][key]) {
+            link.setAttribute('data-tooltip', translations[lang][key]);
+        }
+    });
+    
+    // Update direction
+    document.body.classList.toggle('rtl', lang === 'dv');
+    
+    // Update business tabs (special handling)
+    document.querySelectorAll('.business-tab').forEach(tab => {
+        const key = tab.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+            tab.textContent = translations[lang][key];
+        }
+    });
+    
+    // Update header title if it's one of our translatable strings
+    const headerTitle = document.getElementById('headerTitle');
+    const headerKey = headerTitle.getAttribute('data-i18n');
+    if (headerKey && translations[lang][headerKey]) {
+        headerTitle.textContent = translations[lang][headerKey];
+    }
+}
+
+// Initialize language
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for saved language preference
+    const savedLang = localStorage.getItem('dashboardLanguage') || 'en';
+    currentLanguage = savedLang;
+    
+    // Set initial language
+    updateTranslations(currentLanguage);
+    
+    // Set up language switcher buttons
+    const enBtn = document.getElementById('enLang');
+    const dvBtn = document.getElementById('dvLang');
+    
+    if (enBtn && dvBtn) {
+        enBtn.classList.toggle('active', currentLanguage === 'en');
+        dvBtn.classList.toggle('active', currentLanguage === 'dv');
+        
+        enBtn.addEventListener('click', function() {
+            currentLanguage = 'en';
+            localStorage.setItem('dashboardLanguage', 'en');
+            updateTranslations('en');
+            enBtn.classList.add('active');
+            dvBtn.classList.remove('active');
+        });
+        
+        dvBtn.addEventListener('click', function() {
+            currentLanguage = 'dv';
+            localStorage.setItem('dashboardLanguage', 'dv');
+            updateTranslations('dv');
+            dvBtn.classList.add('active');
+            enBtn.classList.remove('active');
+        });
+    }
+});
+
+// Function to get a translation
+function t(key) {
+    return translations[currentLanguage][key] || key;
+}
+
+// Make the translation function available globally
+window.t = t;
+</script>
+</body>
+</html>
